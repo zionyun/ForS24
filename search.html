@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>ForS24</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="http://fonts.googleapis.com/css?family=Chivo:400,900" rel="stylesheet" />
+<link href="../static/css/default.css" rel="stylesheet" type="text/css" media="all" />
+<link href="../static/css/fonts.css" rel="stylesheet" type="text/css" media="all" />
+    
+<style>
+.map_wrap, .map_wrap * {margin:0; padding:0;font-family:'Malgun Gothic',dotum,'돋움',sans-serif;font-size:12px;}
+.map_wrap {position:relative;width:100%;height:350px;}
+#category {position:absolute;top:10px;left:10px;border-radius: 5px; border:1px solid #909090;box-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);background: #fff;overflow: hidden;z-index: 2;}
+#category li {float:left;list-style: none;width:50px;px;border-right:1px solid #acacac;padding:6px 0;text-align: center; cursor: pointer;}
+#category li.on {background: #eee;}
+#category li:hover {background: #ffe6e6;border-left:1px solid #acacac;margin-left: -1px;}
+#category li:last-child{margin-right:0;border-right:0;}
+#category li span {display: block;margin:0 auto 3px;width:27px;height: 28px;}
+#category li .category_bg {background:url(http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/places_category.png) no-repeat;}
+#category li .bank {background-position: -10px 0;}
+#category li .mart {background-position: -10px -36px;}
+#category li .pharmacy {background-position: -10px -72px;}
+#category li .oil {background-position: -10px -108px;}
+#category li .cafe {background-position: -10px -144px;}
+#category li .store {background-position: -10px -180px;}
+#category li.on .category_bg {background-position-x:-46px;}
+.placeinfo_wrap {position:absolute;bottom:28px;left:-150px;width:300px;}
+.placeinfo {position:relative;width:100%;border-radius:6px;border: 1px solid #ccc;border-bottom:2px solid #ddd;padding-bottom: 10px;background: #fff;}
+.placeinfo:nth-of-type(n) {border:0; box-shadow:0px 1px 2px #888;}
+.placeinfo_wrap .after {content:'';position:relative;margin-left:-12px;left:50%;width:22px;height:12px;background:url('http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')}
+.placeinfo a, .placeinfo a:hover, .placeinfo a:active{color:#fff;text-decoration: none;}
+.placeinfo a, .placeinfo span {display: block;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;}
+.placeinfo span {margin:5px 5px 0 5px;cursor: default;font-size:13px;}
+.placeinfo .title {font-weight: bold; font-size:14px;border-radius: 6px 6px 0 0;margin: -1px -1px 0 -1px;padding:10px; color: #fff;background: #d95050;background: #d95050 url(http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/arrow_white.png) no-repeat right 14px center;}
+.placeinfo .tel {color:#0f7833;}
+.placeinfo .jibun {color:#999;font-size:11px;margin-top:0;}
+</style>
+
+</head>
+<body>
+
+<div id="wrapper">
+   <div id="header-wrapper">
+      <div id="header" class="container">
+         <div id="logo">
+            <h1><a href="\">ForS</a></h1>
+            <h1 id="two"><a href="‪\">2</a></h1>
+            <h1 id="four"><a href="\">4</a></h1>
+         </div>
+      </div>
+   </div>
+   <div id="menu-wrapper">
+ 		<div id="menu" class="container">
+ 			<ul>
+ 				<!-- <li class="current_page_item"><a href="#">Homepage</a></li> -->
+                 <li><a href="\event">행사상품</a></li>
+                 <li><a href="\price">할인율</a></li>
+                 <li><a href="\index">편의점 위치</a></li>
+                 <li><a href="\explain">홈페이지 설명</a></li>
+ 			</ul>
+ 		</div>
+ 	</div>
+</div>
+<div id="map" style="width:100%;height:350px;"></div>
+
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+
+<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+
+
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=eb1b9747e20fbc444b7ac026c40b5b18&libraries=services"></script>
+
+<script language="javascript">
+	
+    var urlParams = location.search.split(/[?&]/).slice(1).map(function(paramPair) {
+
+        return paramPair.split(/=(.+)?/).slice(0, 2);
+
+    }).reduce(function(obj, pairArray) {
+
+        obj[pairArray[0]] = pairArray[1];
+
+        return obj;
+
+    }, {});
+</script>
+
+<script>
+
+// 마커를 클릭하면 장소명을 표출할 인포윈도우 입니다
+var infowindow = new daum.maps.InfoWindow({zIndex:1}),
+   contentNode = document.createElement('div'), // 커스텀 오버레이의 컨텐츠 엘리먼트 입니다 ;
+   markers = []; // 마커를 담을 배열입니다
+
+var searchAddress=" ";
+searchAddress = urlParams.searchAddress;
+searchAddress = decodeURI(searchAddress);
+//alert(searchAddress);
+
+
+var geocoder = new daum.maps.services.Geocoder();
+
+var mapContainer = document.getElementById('map'), // 지도를 표시할 div
+		 mapOption = {
+		    center: new daum.maps.LatLng(37.566826, 126.9786567), // 지도의 중심좌표
+			//center: new daum.maps.LatLng(result[0].y,result[0].x), // 지도의 중심좌표
+			level: 3 // 지도의 확대 레벨
+		 };
+
+var callback = function(result, status) {
+    if (status === daum.maps.services.Status.OK) {
+		var bounds = new daum.maps.LatLng(result[0].y,result[0].x);
+		map.setCenter(bounds);
+	}
+};
+
+
+
+// 지도를 생성합니다
+var map = new daum.maps.Map(mapContainer, mapOption);
+
+geocoder.addressSearch(searchAddress, callback);
+
+
+// 장소 검색 객체를 생성합니다
+var ps = new daum.maps.services.Places(map);
+
+// 커스텀 오버레이의 컨텐츠 노드에 mousedown, touchstart 이벤트가 발생했을때
+// 지도 객체에 이벤트가 전달되지 않도록 이벤트 핸들러로 daum.maps.event.preventMap 메소드를 등록합니다 
+addEventHandle(contentNode, 'mousedown', daum.maps.event.preventMap);
+addEventHandle(contentNode, 'touchstart', daum.maps.event.preventMap);
+
+// 카테고리로 은행을 검색합니다
+ps.categorySearch('CS2', placesSearchCB, {useMapBounds:true});
+
+// 커스텀 오버레이의 컨텐츠 노드에 css class를 추가합니다
+contentNode.className = 'placeinfo_wrap';
+
+
+// 카테고리 검색을 요청하는 함수입니다
+function searchPlaces() {
+
+    // 커스텀 오버레이를 숨깁니다
+    infowindow.setMap(null);
+
+    // 지도에 표시되고 있는 마커를 제거합니다
+    removeMarker();
+
+    ps.categorySearch('CS2', placesSearchCB, {useMapBounds:true});
+
+}
+
+// 지도에 idle 이벤트를 등록합니다
+daum.maps.event.addListener(map, 'idle', function(){
+	 // 커스텀 오버레이를 숨깁니다
+    infowindow.setMap(null);
+
+	// 지도에 표시되고 있는 마커를 제거합니다
+    removeMarker();
+
+	ps.categorySearch('CS2', placesSearchCB, {useMapBounds:true}); 
+
+});
+
+// 키워드 검색 완료 시 호출되는 콜백함수 입니다
+function placesSearchCB (data, status, pagination) {
+
+    if (status === daum.maps.services.Status.OK) {
+		//검색된장소 위치를 기준으로 지도 범위를 재설정하기 위해 
+		//LatLngBounds 객체에 좌표를 추가합니다. 
+        var bounds = new daum.maps.LatLngBounds();
+        for (var i=0; i<data.length; i++) {
+            displayMarker(data[i]);
+            bounds.extend(new daum.maps.LatLng(data[i].y, data[i].x));
+        }
+    }
+}
+
+// 엘리먼트에 이벤트 핸들러를 등록하는 함수입니다
+function addEventHandle(target, type, callback) {
+    if (target.addEventListener) {
+        target.addEventListener(type, callback);
+    } else {
+        target.attachEvent('on' + type, callback);
+    }
+}
+
+
+
+// 지도에 마커를 표시하는 함수입니다
+function displayMarker(place) {
+    // 마커를 생성하고 지도에 표시합니다
+    var marker = new daum.maps.Marker({
+        map: map,
+        position: new daum.maps.LatLng(place.y, place.x)
+    });
+    markers.push(marker);  // 배열에 생성된 마커를 추가합니다
+
+    // 마커에 클릭이벤트를 등록합니다
+    daum.maps.event.addListener(marker, 'click', function() {
+        // 마커를 클릭하면 장소명이 인포윈도우에 표출됩니다
+      var content = '<div class="placeinfo">' +
+                    '   <a class="title" href="' + place.place_url + '" target="_blank" title="' + place.place_name + '">' + place.place_name + '</a>';
+      if (place.road_address_name) {
+        content += '    <span title="' + place.road_address_name + '">' + place.road_address_name + '</span>' +
+                    '  <span class="jibun" title="' + place.address_name + '">(지번 : ' + place.address_name + ')</span>';
+      }  else {
+        content += '    <span title="' + place.address_name + '">' + place.address_name + '</span>';
+      }
+      content += '    <span class="tel">' + place.phone + '</span>' +
+                '</div>' +
+                '<div class="after"></div>';
+
+        contentNode.innerHTML = content;
+        infowindow.setContent(content);
+        infowindow.open(map, marker);
+    });
+}
+
+// 지도 위에 표시되고 있는 마커를 모두 제거합니다
+function removeMarker() {
+    for ( var i = 0; i < markers.length; i++ ) {
+        markers[i].setMap(null);
+    }
+    markers = [];
+}
+
+</script>
+</body>
+</html>
